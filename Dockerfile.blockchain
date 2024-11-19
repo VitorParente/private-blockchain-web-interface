@@ -1,0 +1,27 @@
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+# Install necessary dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    openjdk-21-jdk-headless \
+    libssl-dev \
+    unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and install Besu
+RUN curl -L https://github.com/hyperledger/besu/releases/download/24.10.0/besu-24.10.0.zip -o besu.zip && \
+    unzip besu.zip -d /opt && \
+    ln -s /opt/besu-24.10.0/bin/besu /usr/local/bin/besu && \
+    rm besu.zip
+
+# Copy application config
+COPY ./config ./config
+
+# Set the entrypoint to a script that runs both Besu and logic
+COPY ./entrypoint-blockchain.sh /app/entrypoint-blockchain.sh
+RUN chmod +x /app/entrypoint-blockchain.sh
+
+ENTRYPOINT ["/bin/bash", "/app/entrypoint-blockchain.sh"]

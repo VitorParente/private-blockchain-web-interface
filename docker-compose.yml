@@ -1,0 +1,69 @@
+services:
+  blockchain-node1:
+    build:
+      context: .
+      dockerfile: Dockerfile.blockchain
+    container_name: blockchain-node1
+    volumes:
+      - ./data/authority1:/app/data
+      - ./config:/app/config
+    ports:
+      - "8545:8545" # JSON-RPC API
+    environment:
+      - NODE_NAME=authority1
+      - RPC_HTTP_PORT=8545
+    networks:
+      besu-network:
+        ipv4_address: 172.16.238.10
+
+  blockchain-node2:
+    build:
+      context: .
+      dockerfile: Dockerfile.blockchain
+    container_name: blockchain-node2
+    volumes:
+      - ./data/authority2:/app/data
+      - ./config:/app/config
+    environment:
+      - NODE_NAME=authority2
+      - RPC_HTTP_PORT=8546
+    networks:
+      besu-network:
+        ipv4_address: 172.16.238.11
+
+  blockchain-node3:
+    build:
+      context: .
+      dockerfile: Dockerfile.blockchain
+    container_name: blockchain-node3
+    volumes:
+      - ./data/authority3:/app/data
+      - ./config:/app/config
+    environment:
+      - NODE_NAME=authority3
+      - RPC_HTTP_PORT=8547
+    networks:
+      besu-network:
+        ipv4_address: 172.16.238.12
+
+  web-interface:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: web-interface
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "3055:3055"  # Expose the web interface port
+    environment:
+      - RPC_URL=http://172.16.238.10:8545
+    networks:
+      besu-network:
+        ipv4_address: 172.16.238.13
+
+networks:
+  besu-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.238.0/24

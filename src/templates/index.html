@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blockchain Transactions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #transactions {
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        .transaction {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .transaction:last-child {
+            border-bottom: none;
+        }
+        button {
+            margin-right: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+        }
+        #message {
+            margin-top: 10px;
+            color: green;
+        }
+        #inputMessage {
+            width: 300px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        #formContainer {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Blockchain Transactions</h1>
+    <div id="formContainer">
+        <input type="text" id="inputMessage" placeholder="Enter your message here">
+        <button id="sendTransactionButton">Send Transaction</button>
+    </div>
+    <button id="updateButton">Update Transactions</button>
+    <div id="message"></div>
+    <div id="transactions">
+        <!-- Transactions will be loaded here -->
+    </div>
+    <script>
+        document.getElementById('sendTransactionButton').addEventListener('click', function() {
+            const messageInput = document.getElementById('inputMessage');
+            const message = messageInput.value.trim();
+            if (message === '') {
+                alert('Please enter a message.');
+                return;
+            }
+
+            fetch('/send_transaction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.transactionHash) {
+                    document.getElementById('message').innerText = 'Transaction sent: ' + data.transactionHash;
+                    messageInput.value = ''; // Clear the input field
+                    loadTransactions();
+                } else {
+                    alert('Failed to send transaction: ' + JSON.stringify(data));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to send transaction.');
+            });
+        });
+
+        document.getElementById('updateButton').addEventListener('click', function() {
+            loadTransactions();
+        });
+
+        function loadTransactions() {
+            fetch('/get_transactions')
+    .then(response => response.json())
+    .then(data => {
+        if (Array.isArray(data)) {
+            const transactionsDiv = document.getElementById('transactions');
+            transactionsDiv.innerHTML = '';
+            data.forEach(tx => {
+                const txDiv = document.createElement('div');
+                txDiv.className = 'transaction';
+                txDiv.innerHTML = '<strong>Block:</strong> ' + tx.block +
+                                  ' <strong>Hash:</strong> ' + tx.transactionHash +
+                                  '<br><strong>Data:</strong> ' + tx.data;
+                transactionsDiv.appendChild(txDiv);
+            });
+        } else {
+            console.error('Unexpected response:', data);
+            alert('Failed to load transactions: ' + JSON.stringify(data));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to load transactions.');
+    });
+
+        }
+
+        // Load transactions on page load
+        loadTransactions();
+    </script>
+</body>
+</html>
