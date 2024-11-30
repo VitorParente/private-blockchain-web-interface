@@ -1,0 +1,43 @@
+Comandos uteis terminal
+
+Lenbrar sempre de ativar o ambiente virtual antes de instalar dependencias e rodar o projeto.
+
+Instalar o venv:
+
+    sudo pacman -S python-virtualenv
+
+Criar o anbiente virtual no diretorio do projeto:
+
+    python -m venv "nome_do_ambiente"
+
+
+Ativar o anbite virtual:
+
+    source nome_do_ambiente/bin/activate
+
+Quando incerrar:
+
+    deactivate
+
+Lembrar que as dependencias devem ser instaladas no diretorio do projeto.
+
+
+Comando para instalar o django, instalar no diretorio do projeto com o ambiente virtual ativado:
+
+    pip install django
+
+Comando para iniciar o projeto:
+
+    django-admin startproject nome_do_projeto
+
+Comando para rodar o projeto deve-se executar dentro do diretorio do projeto:
+
+    python manage.py runserver
+
+Comando para iniciar um app no django:
+
+    python manage.py startapp nome_do_app
+
+
+
+

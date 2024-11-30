@@ -1,119 +1,218 @@
+```jinja2
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+    <meta charset="UTF-8">
     <title>Blockchain Transactions</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        #dataForm, #formContainer {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #4cae4c;
         }
         #transactions {
             height: 400px;
             overflow-y: scroll;
             border: 1px solid #ccc;
             padding: 10px;
+            background: #fff;
+            border-radius: 8px;
         }
         .transaction {
-            padding: 5px;
+            padding: 10px;
             border-bottom: 1px solid #eee;
+            transition: background-color 0.3s;
+        }
+        .transaction:hover {
+            background-color: #f9f9f9;
         }
         .transaction:last-child {
             border-bottom: none;
-        }
-        button {
-            margin-right: 10px;
-            padding: 10px 15px;
-            font-size: 16px;
         }
         #message {
             margin-top: 10px;
             color: green;
         }
-        #inputMessage {
-            width: 300px;
-            padding: 8px;
-            font-size: 16px;
+        #hashInputContainer {
+            margin-top: 20px;
         }
-        #formContainer {
-            margin-bottom: 20px;
+        #hashInput {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>Blockchain Transactions</h1>
-    <div id="formContainer">
-        <input type="text" id="inputMessage" placeholder="Enter your message here">
-        <button id="sendTransactionButton">Send Transaction</button>
+    <h1>Enviar Dados para a Blockchain</h1>
+
+    <div id="dataForm">
+        <label for="senderIdInput">ID do Remetente:</label>
+        <input type="text" id="senderIdInput" placeholder="Digite seu ID" required>
+
+        <label for="coordinatesInput">Coordenadas:</label>
+        <input type="text" id="coordinatesInput" placeholder="Ex: 40.7128,-74.0060" required>
+
+        <label for="messageInput">Mensagem:</label>
+        <textarea id="messageInput" placeholder="Digite sua mensagem" required></textarea>
+
+        <button id="sendButton">Enviar Dados</button>
     </div>
-    <button id="updateButton">Update Transactions</button>
+
+    <div id="response"></div>
+
+    <button id="updateButton">Atualizar Transações</button>
+
+    <div id="formContainer">
+        <label for="hashInput">Buscar Transação pelo Hash:</label>
+        <input type="text" id="hashInput" placeholder="Digite o Hash da Transação">
+        <button id="searchByHashButton">Buscar Transação</button>
+    </div>
+
     <div id="message"></div>
     <div id="transactions">
-        <!-- Transactions will be loaded here -->
+        <!-- As transações serão carregadas aqui -->
     </div>
+
     <script>
-        document.getElementById('sendTransactionButton').addEventListener('click', function() {
-            const messageInput = document.getElementById('inputMessage');
-            const message = messageInput.value.trim();
-            if (message === '') {
-                alert('Please enter a message.');
+        document.getElementById('sendButton').addEventListener('click', function() {
+            const senderId = document.getElementById('senderIdInput').value.trim();
+            const coordinates = document.getElementById('coordinatesInput').value.trim();
+            const message = document.getElementById('messageInput').value.trim();
+
+            if (!senderId || !coordinates || !message) {
+                alert('Por favor, preencha todos os campos.');
                 return;
             }
+
+            const dataToSend = {
+                sender_id: senderId,
+                coordinates: coordinates.split(',').map(coord => coord.trim()),
+                message: message
+            };
 
             fetch('/send_transaction', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message: message }),
+                body: JSON.stringify(dataToSend),
             })
             .then(response => response.json())
             .then(data => {
                 if (data.transactionHash) {
-                    document.getElementById('message').innerText = 'Transaction sent: ' + data.transactionHash;
-                    messageInput.value = ''; // Clear the input field
-                    loadTransactions();
+                    document.getElementById('response').innerText = 'Transação enviada! Hash: ' + data.transactionHash;
                 } else {
-                    alert('Failed to send transaction: ' + JSON.stringify(data));
+                    document.getElementById('response').innerText = 'Falha ao enviar: ' + JSON.stringify(data);
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to send transaction.');
+                console.error('Erro:', error);
+                alert('Falha ao enviar os dados.');
             });
         });
 
-        document.getElementById('updateButton').addEventListener('click', function() {
-            loadTransactions();
-        });
+        document.getElementById('updateButton').addEventListener('click', loadTransactions);
 
         function loadTransactions() {
             fetch('/get_transactions')
-    .then(response => response.json())
-    .then(data => {
-        if (Array.isArray(data)) {
-            const transactionsDiv = document.getElementById('transactions');
-            transactionsDiv.innerHTML = '';
-            data.forEach(tx => {
-                const txDiv = document.createElement('div');
-                txDiv.className = 'transaction';
-                txDiv.innerHTML = '<strong>Block:</strong> ' + tx.block +
-                                  ' <strong>Hash:</strong> ' + tx.transactionHash +
-                                  '<br><strong>Data:</strong> ' + tx.data;
-                transactionsDiv.appendChild(txDiv);
-            });
-        } else {
-            console.error('Unexpected response:', data);
-            alert('Failed to load transactions: ' + JSON.stringify(data));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to load transactions.');
-    });
-
+                .then(response => response.json())
+                .then(data => {
+                    const transactionsDiv = document.getElementById('transactions');
+                    transactionsDiv.innerHTML = '';
+                    data.forEach(tx => {
+                        const txDiv = document.createElement('div');
+                        txDiv.className = 'transaction';
+                        txDiv.innerHTML = `
+                            <strong>Hash:</strong> ${tx.transactionHash} <br>
+                            <strong>Remetente:</strong> ${tx.from} <br>
+                            <strong>Destino:</strong> ${tx.to} <br>
+                            <strong>Valor:</strong> ${tx.value} Ether <br>
+                            <strong>Dados:</strong> ${tx.data || "N/A"}
+                        `;
+                        transactionsDiv.appendChild(txDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Falha ao carregar transações.');
+                });
         }
 
-        // Load transactions on page load
+        document.getElementById('searchByHashButton').addEventListener('click', function() {
+            const transactionHash = document.getElementById('hashInput').value.trim();
+
+            if (!transactionHash) {
+                alert('Por favor, insira um hash de transação.');
+                return;
+            }
+
+            fetch(`/get_transaction_data?tx_hash=${transactionHash}`)
+                .then(response => response.json())
+                .then(data => {
+                    const transactionsDiv = document.getElementById('transactions');
+                    transactionsDiv.innerHTML = '';  // Limpa as transações anteriores
+
+                    if (data.error) {
+                        alert(data.error);  // Mostra o erro se houver
+                        return;
+                    }
+
+                    const txDiv = document.createElement('div');
+                    txDiv.className = 'transaction';
+                    txDiv.innerHTML = `
+                        <strong>Remetente:</strong> ${data.from || "N/A"} <br>
+                        <strong>Destino:</strong> ${data.to || "N/A"} <br>
+                        <strong>Valor:</strong> ${data.value || "0"} Ether <br>
+                        <strong>Dados:</strong> ${data.input ? JSON.stringify(data) : "N/A"} <br>
+                    `;
+                    transactionsDiv.appendChild(txDiv);
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Falha ao buscar transação.');
+                });
+        });
+
+        // Carrega transações ao carregar a página
         loadTransactions();
     </script>
 </body>
 </html>
+```
